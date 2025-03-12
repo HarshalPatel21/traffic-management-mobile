@@ -4,12 +4,22 @@ import MapView, { Marker } from "react-native-maps";
 import * as Location from "expo-location";
 import { GooglePlacesAutocomplete } from "react-native-google-places-autocomplete";
 import "react-native-get-random-values";
-import { GOOGLE_MAPS_API_KEY } from "@env";
+// import { GOOGLE_MAPS_API_KEY } from "@env";
+import Constants from "expo-constants";
+import { Coordinates } from "@/types/location";
+import MapScreen from "@/components/MapScreen";
 
+const GOOGLE_MAPS_API_KEY = Constants.expoConfig?.extra?.GOOGLE_MAPS_API_KEY;
 
 export default function HomeScreen() {
-  const [location, setLocation] = useState(null);
-  const [destination, setDestination] = useState(null);
+  const [location, setLocation] = useState<Coordinates>({
+    latitude: 0,
+    longitude: 0,
+  });
+  const [destination, setDestination] = useState<Coordinates>({
+    latitude: 0,
+    longitude: 0,
+  });
   const [errorMsg, setErrorMsg] = useState(null);
 
   useEffect(() => {
@@ -45,12 +55,17 @@ export default function HomeScreen() {
     }
   };
 
+  console.log(destination);
+  
+
   return (
+    
     <View style={styles.container}>
       {/* Google Places Autocomplete for Destination */}
       <GooglePlacesAutocomplete
         placeholder="Enter destination"
         fetchDetails={true}
+        minLength={2}
         onPress={(data, details = null) => {
           if (details) {
             setDestination({
@@ -59,10 +74,7 @@ export default function HomeScreen() {
             });
           }
         }}
-        query={{
-          key: GOOGLE_MAPS_API_KEY,
-          language: "en",
-        }}
+        query={{ key: GOOGLE_MAPS_API_KEY, language: "en" }}
         styles={{
           container: {
             position: "absolute",
@@ -73,42 +85,13 @@ export default function HomeScreen() {
           },
           textInput: { height: 50, borderRadius: 5, fontSize: 16 },
         }}
+        debounce={300}
       />
 
-      {/* Map */}
-      {location && (
-        <MapView
-          style={styles.map}
-          initialRegion={{
-            latitude: location.latitude,
-            longitude: location.longitude,
-            latitudeDelta: 0.0922,
-            longitudeDelta: 0.0421,
-          }}
-        >
-          {/* Current Location Marker */}
-          <Marker
-            coordinate={{
-              latitude: location.latitude,
-              longitude: location.longitude,
-            }}
-            title="My Location"
-          />
+      {/* Single MapScreen Component with Route */}
+      <MapScreen location={location} destination={destination} />
 
-          {/* Destination Marker */}
-          {destination && (
-            <Marker
-              coordinate={{
-                latitude: destination.latitude,
-                longitude: destination.longitude,
-              }}
-              title="Destination"
-            />
-          )}
-        </MapView>
-      )}
-
-      <Button title="Refresh Location" onPress={() => requestLocation(true)} />
+      <Button title="Refresh Location" onPress={()=>requestLocation(true)} />
     </View>
   );
 }
