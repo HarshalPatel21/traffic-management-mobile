@@ -141,86 +141,148 @@ const MapScreen: React.FC<MapScreenProps> = ({ location, destination }) => {
   }, [destination]);
 
   const fetchRouteWithTraffic = async () => {
-    console.log("before url");
+   
     
 
-    const url = `https://routes.googleapis.com/directions/v2:computeRoutes`;
+    // const url = `https://routes.googleapis.com/directions/v2:computeRoutes`;
 
-    const requestBody = {
-      origin: {
-        location: {
-          latLng: {
-            latitude: location.latitude,
-            longitude: location.longitude,
-          },
-        },
-      },
-      destination: {
-        location: {
-          latLng: {
-            latitude: destination.latitude,
-            longitude: destination.longitude,
-          },
-        },
-      },
-      travelMode: "DRIVE",
-      routingPreference: "TRAFFIC_AWARE_OPTIMAL",
-      computeAlternativeRoutes: false,
-      routeModifiers: { avoidTolls: false, avoidHighways: false },
-      languageCode: "en-US",
-      units: "IMPERIAL",
-    };
+    // const requestBody = {
+    //   origin: {
+    //     location: {
+    //       latLng: {
+    //         latitude: location.latitude,
+    //         longitude: location.longitude,
+    //       },
+    //     },
+    //   },
+    //   destination: {
+    //     location: {
+    //       latLng: {
+    //         latitude: destination.latitude,
+    //         longitude: destination.longitude,
+    //       },
+    //     },
+    //   },
+    //   travelMode: "DRIVE",
+    //   routingPreference: "TRAFFIC_AWARE_OPTIMAL",
+    //   computeAlternativeRoutes: false,
+    //   languageCode: "en-US",
+    //   units: "IMPERIAL",
+    // };
+
+    // try {
+     
+      
+    //   const response = await fetch(url, {
+    //     method: "POST",
+    //     headers: {
+    //       "Content-Type": "application/json",
+    //       "X-Goog-Api-Key": GOOGLE_MAPS_API_KEY,
+    //       "X-Goog-FieldMask":
+    //         "routes.duration,routes.distanceMeters,routes.polyline.encodedPolyline,routes.legs.steps",
+    //     },
+    //     body: JSON.stringify(requestBody),
+    //   });
+
+    
+      
+
+    //   const data = await response.json();
+      
+    //   console.log(data);
+      
+
+    //   if (data.routes) {
+        
+    //     const decodedPolyline = polyline.decode(
+    //       data.routes[0].polyline.encodedPolyline
+    //     );
+        
+    //    const formattedRoute = decodedPolyline.map(([latitude, longitude]) => ({
+    //      latitude,
+    //      longitude,
+    //    }));
+
+    //    setRoute(formattedRoute);
+
+    //    const trafficConditions = data.routes[0].legs.flatMap((leg) =>
+    //     leg.steps.map((step) => {
+    //       if (step.trafficSpeedEntry && step.trafficSpeedEntry.length > 0) {
+    //         console.log(step.trafficSpeedEntry[0].speedCategory);
+            
+    //         return step.trafficSpeedEntry[0].speedCategory; // Returns "SLOW", "MODERATE", or "FAST"
+    //       }
+    //       return "MODERATE"; // Default value
+    //     })
+    //   );
+
+    //   setTrafficData(trafficConditions);
+    //   }
+    // } catch (error) {
+    //   console.error("Error fetching route:", error);
+    // }
+
+
+    const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${location.latitude},${location.longitude}&destination=${destination.latitude},${destination.longitude}&departure_time=now&traffic_model=best_guess&key=${GOOGLE_MAPS_API_KEY}`;
 
     try {
-      console.log("making response");
-      
       const response = await fetch(url, {
-        method: "POST",
+        method: "GET",
         headers: {
           "Content-Type": "application/json",
-          "X-Goog-Api-Key": GOOGLE_MAPS_API_KEY,
-          "X-Goog-FieldMask":
-            "routes.duration,routes.distanceMeters,routes.polyline.encodedPolyline",
         },
-        body: JSON.stringify(requestBody),
       });
-
-      console.log(response);
-      
 
       const data = await response.json();
-      console.log(data);
-      
-      if (data.routes) {
-        console.log("Route Data:", data.routes);
-        const decodedPolyline = polyline.decode(
-          data.routes[0].polyline.encodedPolyline
-        );
-        console.log("Route Data:", decodedPolyline);
-       const formattedRoute = decodedPolyline.map(([latitude, longitude]) => ({
-         latitude,
-         longitude,
-       }));
+    
 
-       setRoute(formattedRoute);
-      const trafficConditions = formattedRoute.map(() => {
-        const speeds = ["SLOW", "MODERATE", "FAST"];
-        return speeds[Math.floor(Math.random() * speeds.length)];
-      });
+      if (data.routes.length > 0) {
+        const route = data.routes[0];
 
-      setTrafficData(trafficConditions);
+        // Decode polyline
+        const decodedPolyline = polyline.decode(route.overview_polyline.points);
+        const formattedRoute = decodedPolyline.map(([latitude, longitude]) => ({
+          latitude,
+          longitude,
+        }));
+
+        setRoute(formattedRoute);
+
+        const trafficConditions = route.legs.flatMap((leg) => {
+          const totalDurationInTraffic = leg.duration_in_traffic
+            ? leg.duration_in_traffic.value
+            : leg.duration.value; 
+        
+          const totalDuration = leg.duration.value;
+          
+          return leg.steps.map((step) => {
+            const distanceKm = step.distance.value / 1000; 
+            
+         
+            const stepDurationInTraffic =
+              (step.duration.value / totalDuration) * totalDurationInTraffic;
+        
+            const durationInHours = stepDurationInTraffic / 3600; 
+            const speed = distanceKm / durationInHours;
+        
+            if (speed < 20) return "SLOW";
+            if (speed < 40) return "MODERATE";
+            return "FAST";
+          });
+        });
+
+        setTrafficData(trafficConditions);
       }
     } catch (error) {
-      console.error("Error fetching route:", error);
+      console.error("Error fetching directions:", error);
     }
   };
-
+ 
   const getTrafficColor = (speed: string) => {
-    console.log("getTrafficColor called");
     
     if (speed === "SLOW") return "red";
     if (speed === "MODERATE") return "orange";
-    return "green";
+    return "blue";
   };
 
 
@@ -241,7 +303,7 @@ const MapScreen: React.FC<MapScreenProps> = ({ location, destination }) => {
         {/* Render Route */}
         {route.length > 1 &&
           route.map((point, index) => {
-            console.log("Called");
+            
             if (index === 0) return null; // Skip first point
             
             return (
