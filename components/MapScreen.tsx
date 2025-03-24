@@ -1,123 +1,5 @@
-// import React, { useEffect, useState } from "react";
-// import { View, StyleSheet } from "react-native";
-// import MapView, { Marker, Polyline } from "react-native-maps";
-// import { Coordinates } from "@/types/location";
-// import Constants from "expo-constants";
-// const GOOGLE_MAPS_API_KEY = Constants.expoConfig?.extra?.GOOGLE_MAPS_API_KEY;
-
-// const MapScreen = ({
-//   location,
-//   destination,
-// }: {
-//   location: Coordinates;
-//   destination: Coordinates;
-// }) => {
-//   const [routeCoordinates, setRouteCoordinates] = useState<Coordinates[]>([]);
-
-//   useEffect(() => {
-//     if (location.latitude !== 0 && destination.latitude !== 0) {
-//       getRoute();
-//     }
-//   }, [location, destination]);
-
-//   const getRoute = async () => {
-//     const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${location.latitude},${location.longitude}&destination=${destination.latitude},${destination.longitude}&key=${GOOGLE_MAPS_API_KEY}`;
-
-//     try {
-//       const response = await fetch(url);
-//       const data = await response.json();
-
-//       if (data.routes.length) {
-//         const points = data.routes[0].overview_polyline.points;
-//         const decodedPoints = decodePolyline(points);
-//         setRouteCoordinates(decodedPoints);
-//       }
-//     } catch (error) {
-//       console.error("Error fetching route:", error);
-//     }
-//   };
-
-//   const decodePolyline = (encoded: string) => {
-//     let points = [];
-//     let index = 0,
-//       lat = 0,
-//       lng = 0;
-
-//     while (index < encoded.length) {
-//       let shift = 0,
-//         result = 0;
-//       let byte;
-//       do {
-//         byte = encoded.charCodeAt(index++) - 63;
-//         result |= (byte & 0x1f) << shift;
-//         shift += 5;
-//       } while (byte >= 0x20);
-//       let deltaLat = result & 1 ? ~(result >> 1) : result >> 1;
-//       lat += deltaLat;
-
-//       shift = 0;
-//       result = 0;
-//       do {
-//         byte = encoded.charCodeAt(index++) - 63;
-//         result |= (byte & 0x1f) << shift;
-//         shift += 5;
-//       } while (byte >= 0x20);
-//       let deltaLng = result & 1 ? ~(result >> 1) : result >> 1;
-//       lng += deltaLng;
-
-//       points.push({ latitude: lat / 1e5, longitude: lng / 1e5 });
-//     }
-
-//     return points;
-//   };
-
-//   return (
-//     <MapView
-//       style={styles.map}
-//       initialRegion={{
-//         latitude: location.latitude,
-//         longitude: location.longitude,
-//         latitudeDelta: 0.0922,
-//         longitudeDelta: 0.0421,
-//       }}
-//     >
-//       {/* Current Location Marker */}
-//       <Marker coordinate={location} title="My Location" />
-
-//       {/* Destination Marker */}
-//       {destination.latitude !== 0 && (
-//         <Marker coordinate={destination} title="Destination" />
-//       )}
-
-//       {/* Route Polyline */}
-//       {routeCoordinates.length > 0 && (
-//         <Polyline
-//           coordinates={routeCoordinates}
-//           strokeWidth={4}
-//           strokeColor="blue"
-//         />
-//       )}
-//     </MapView>
-//   );
-// };
-
-// const styles = StyleSheet.create({
-//   container: {
-//     flex: 1,
-//   },
-//   map: {
-//     flex: 1,
-//   },
-// });
-
-// export default MapScreen;
-
-
-
-
-
 import React, { useEffect, useState } from "react";
-import MapView, { Marker, Polyline } from "react-native-maps";
+import MapView, { Circle, Marker, Polyline } from "react-native-maps";
 import { View, StyleSheet } from "react-native";
 import Constants from "expo-constants";
 import { Coordinates } from "@/types/location";
@@ -133,95 +15,19 @@ interface MapScreenProps {
 const MapScreen: React.FC<MapScreenProps> = ({ location, destination }) => {
   const [route, setRoute] = useState<any[]>([]);
    const [trafficData, setTrafficData] = useState([]);
+   const [trafficSignals, setTrafficSignals] = useState<
+     { latitude: number; longitude: number }[]
+   >([]);
+
 
   useEffect(() => {
     if (destination.latitude !== 0 && destination.longitude !== 0) {
       fetchRouteWithTraffic();
+      // fetchTrafficSignals();
     }
   }, [destination]);
 
   const fetchRouteWithTraffic = async () => {
-   
-    
-
-    // const url = `https://routes.googleapis.com/directions/v2:computeRoutes`;
-
-    // const requestBody = {
-    //   origin: {
-    //     location: {
-    //       latLng: {
-    //         latitude: location.latitude,
-    //         longitude: location.longitude,
-    //       },
-    //     },
-    //   },
-    //   destination: {
-    //     location: {
-    //       latLng: {
-    //         latitude: destination.latitude,
-    //         longitude: destination.longitude,
-    //       },
-    //     },
-    //   },
-    //   travelMode: "DRIVE",
-    //   routingPreference: "TRAFFIC_AWARE_OPTIMAL",
-    //   computeAlternativeRoutes: false,
-    //   languageCode: "en-US",
-    //   units: "IMPERIAL",
-    // };
-
-    // try {
-     
-      
-    //   const response = await fetch(url, {
-    //     method: "POST",
-    //     headers: {
-    //       "Content-Type": "application/json",
-    //       "X-Goog-Api-Key": GOOGLE_MAPS_API_KEY,
-    //       "X-Goog-FieldMask":
-    //         "routes.duration,routes.distanceMeters,routes.polyline.encodedPolyline,routes.legs.steps",
-    //     },
-    //     body: JSON.stringify(requestBody),
-    //   });
-
-    
-      
-
-    //   const data = await response.json();
-      
-    //   console.log(data);
-      
-
-    //   if (data.routes) {
-        
-    //     const decodedPolyline = polyline.decode(
-    //       data.routes[0].polyline.encodedPolyline
-    //     );
-        
-    //    const formattedRoute = decodedPolyline.map(([latitude, longitude]) => ({
-    //      latitude,
-    //      longitude,
-    //    }));
-
-    //    setRoute(formattedRoute);
-
-    //    const trafficConditions = data.routes[0].legs.flatMap((leg) =>
-    //     leg.steps.map((step) => {
-    //       if (step.trafficSpeedEntry && step.trafficSpeedEntry.length > 0) {
-    //         console.log(step.trafficSpeedEntry[0].speedCategory);
-            
-    //         return step.trafficSpeedEntry[0].speedCategory; // Returns "SLOW", "MODERATE", or "FAST"
-    //       }
-    //       return "MODERATE"; // Default value
-    //     })
-    //   );
-
-    //   setTrafficData(trafficConditions);
-    //   }
-    // } catch (error) {
-    //   console.error("Error fetching route:", error);
-    // }
-
 
     const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${location.latitude},${location.longitude}&destination=${destination.latitude},${destination.longitude}&departure_time=now&traffic_model=best_guess&key=${GOOGLE_MAPS_API_KEY}`;
 
@@ -272,11 +78,197 @@ const MapScreen: React.FC<MapScreenProps> = ({ location, destination }) => {
         });
 
         setTrafficData(trafficConditions);
+
+          let allTrafficSignals = [];
+
+          // Iterate over each step in the route
+          console.log("Starting");
+          
+          for (const leg of route.legs) {
+            for (const step of leg.steps) {
+              console.log("step", step);
+
+              // Decode step polyline
+              const stepPolyline = polyline.decode(step.polyline.points);
+
+              // Extract the first and last points of the polyline
+              const firstPoint = stepPolyline[0];
+              const lastPoint = stepPolyline[stepPolyline.length - 1];
+
+              // Array to hold the first and last points
+              const pointsToCheck = [firstPoint, lastPoint];
+
+              for (const [latitude, longitude] of pointsToCheck) {
+                // Query Overpass API for traffic signals near this coordinate
+                const overpassQuery = `
+                  [out:json];
+                  (
+                    node[highway=traffic_signals](around:30,${latitude},${longitude});
+                  );
+                  out;
+                `;
+                console.log("overpassQuery", overpassQuery);
+
+                const overpassURL = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(
+                  overpassQuery
+                )}`;
+
+                try {
+                  const overpassResponse = await fetch(overpassURL, {
+                    method: "GET",
+                    headers: {
+                      "Content-Type": "application/x-www-form-urlencoded",
+                    },
+                  });
+
+                  if (!overpassResponse.ok) {
+                    throw new Error(
+                      `HTTP error! status: ${overpassResponse.status}`
+                    );
+                  }
+
+                  const overpassData = await overpassResponse.json();
+
+                  // Extract traffic signals
+                  const trafficSignals =
+                    overpassData.elements?.map((node) => ({
+                      latitude: node.lat,
+                      longitude: node.lon,
+                    })) || [];
+
+                    console.log("trafficSignals", trafficSignals);
+                    
+
+                  allTrafficSignals = [...allTrafficSignals, ...trafficSignals];
+                } catch (error) {
+                  console.error("Error fetching traffic signals:", error);
+                }
+
+                // Add a delay to avoid rate limiting
+                await new Promise((resolve) => setTimeout(resolve, 1));
+              }
+            }
+          }
+
+        //   const calculateDistance = (lat1, lon1, lat2, lon2) => {
+        //     const R = 6371; // Radius of the Earth in km
+        //     const dLat = (lat2 - lat1) * (Math.PI / 180);
+        //     const dLon = (lon2 - lon1) * (Math.PI / 180);
+        //     const a =
+        //       Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        //       Math.cos(lat1 * (Math.PI / 180)) *
+        //         Math.cos(lat2 * (Math.PI / 180)) *
+        //         Math.sin(dLon / 2) *
+        //         Math.sin(dLon / 2);
+        //     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        //     return R * c; // Distance in km
+        //   };
+
+        //   for (let i = 0; i < formattedRoute.length; i += 10) {
+        //     // Query every 10th point to reduce API calls
+        //     const { latitude, longitude } = formattedRoute[i];
+
+        //     // Query Overpass API for traffic signals near this coordinate
+        //     const overpassQuery = `
+        //   [out:json];
+        //   (
+        //     node[highway=traffic_signals](around:100,${latitude},${longitude});
+        //   );
+        //   out;
+        // `;
+        //     console.log("overpassQuery", overpassQuery);
+
+        //     const overpassURL = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(
+        //       overpassQuery
+        //     )}`;
+
+        //     try {
+        //       const overpassResponse = await fetch(overpassURL, {
+        //         method: "GET",
+        //         headers: {
+        //           "Content-Type": "application/x-www-form-urlencoded",
+        //         },
+        //       });
+
+        //       if (!overpassResponse.ok) {
+        //         throw new Error(
+        //           `HTTP error! status: ${overpassResponse.status}`
+        //         );
+        //       }
+
+        //       const overpassData = await overpassResponse.json();
+
+        //       // Extract traffic signals
+        //       const trafficSignals =
+        //         overpassData.elements?.map((node) => ({
+        //           latitude: node.lat,
+        //           longitude: node.lon,
+        //         })) || [];
+
+        //       // Filter traffic signals to ensure they are on the route
+        //       const filteredSignals = trafficSignals.filter((signal) => {
+        //         // Find the nearest point on the route
+        //         const nearestPoint = formattedRoute.reduce((prev, curr) => {
+        //           const prevDistance = calculateDistance(
+        //             signal.latitude,
+        //             signal.longitude,
+        //             prev.latitude,
+        //             prev.longitude
+        //           );
+        //           const currDistance = calculateDistance(
+        //             signal.latitude,
+        //             signal.longitude,
+        //             curr.latitude,
+        //             curr.longitude
+        //           );
+        //           return currDistance < prevDistance ? curr : prev;
+        //         });
+
+        //         // Check if the signal is within 100 meters of the route
+        //         const distance = calculateDistance(
+        //           signal.latitude,
+        //           signal.longitude,
+        //           nearestPoint.latitude,
+        //           nearestPoint.longitude
+        //         );
+        //         return distance <= 0.1; // 100 meters
+        //       });
+
+        //       allTrafficSignals = [...allTrafficSignals, ...filteredSignals];
+        //     } catch (error) {
+        //       console.error("Error fetching traffic signals:", error);
+        //     }
+
+        //     // Add a delay to avoid rate limiting
+        //     await new Promise((resolve) => setTimeout(resolve, 1));
+        //   }
+
+          console.log("allTrafficSignals", allTrafficSignals);
+          setTrafficSignals(allTrafficSignals);
       }
     } catch (error) {
       console.error("Error fetching directions:", error);
     }
   };
+
+   const fetchTrafficSignals = async () => {
+     const url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${location.latitude},${location.longitude}&radius=5000&type=traffic_signal&key=${GOOGLE_MAPS_API_KEY}`;
+
+     try {
+       const response = await fetch(url);
+       const data = await response.json();
+
+       if (data.results.length > 0) {
+         const signals = data.results.map((signal: any) => ({
+           latitude: signal.geometry.location.lat,
+           longitude: signal.geometry.location.lng,
+         }));
+         setTrafficSignals(signals);
+       }
+     } catch (error) {
+       console.error("Error fetching traffic signals:", error);
+     }
+   };
  
   const getTrafficColor = (speed: string) => {
     
@@ -303,9 +295,8 @@ const MapScreen: React.FC<MapScreenProps> = ({ location, destination }) => {
         {/* Render Route */}
         {route.length > 1 &&
           route.map((point, index) => {
-            
             if (index === 0) return null; // Skip first point
-            
+
             return (
               <Polyline
                 key={index}
@@ -315,6 +306,36 @@ const MapScreen: React.FC<MapScreenProps> = ({ location, destination }) => {
               />
             );
           })}
+
+        {trafficSignals.map((signal, index) => (
+          <Circle
+            key={`signal-${index}`}
+            center={signal}
+            radius={50}
+            fillColor="rgba(255, 0, 0, 0.5)"
+            strokeColor="red"
+          />
+        ))}
+
+        {/* {trafficSignals.map((signal, index) => (
+          <Marker
+            key={index}
+            coordinate={{
+              latitude: signal.latitude,
+              longitude: signal.longitude,
+            }}
+            title="Traffic Signal"
+          >
+            <View
+              style={{
+                backgroundColor: "red",
+                width: 10,
+                height: 10,
+                borderRadius: 5,
+              }}
+            />
+          </Marker>
+        ))} */}
       </MapView>
     </View>
   );
